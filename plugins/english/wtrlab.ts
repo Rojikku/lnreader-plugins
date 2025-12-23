@@ -152,12 +152,16 @@ class WTRLAB implements Plugin.PluginBase {
     return htmlString;
   }
 
-  async searchNovels(searchTerm: string): Promise<Plugin.NovelItem[]> {
+  async searchNovels(
+    searchTerm: string,
+    page: number,
+  ): Promise<Plugin.SourceNovel[]> {
+    if (page !== 1) return [];
+    // TODO: This function uses the in-page easy search. There's a better search, it's just harder to access.
     const response = await fetchApi(this.site + 'api/search', {
       headers: {
         'Content-Type': 'application/json',
-        Referer: this.site + this.sourceLang,
-        Origin: this.site,
+        Referer: this.site + this.sourceLang + 'novel-list',
       },
       method: 'POST',
       body: JSON.stringify({ text: searchTerm }),
@@ -167,7 +171,7 @@ class WTRLAB implements Plugin.PluginBase {
 
     // Parse novels from JSON
     const novels: Plugin.NovelItem[] = recentNovel.data.map((datum: Datum) => ({
-      name: datum.data.title || '',
+      name: datum.data.title || datum.slug || '',
       cover: datum.data.image,
       path: this.sourceLang + 'serie-' + datum.raw_id + '/' + datum.slug || '',
     }));
