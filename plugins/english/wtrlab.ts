@@ -77,13 +77,11 @@ class WTRLAB implements Plugin.PluginBase {
     const novel: Plugin.SourceNovel = {
       path: novelPath,
       name: loadedCheerio('h1.text-uppercase').text(),
-      cover: loadedCheerio('.img-wrap > img').attr('src'),
       summary: loadedCheerio('.lead').text().trim(),
     };
 
-    novel.genres = loadedCheerio('td:contains("Genre")')
-      .next()
-      .find('a')
+    novel.genres = loadedCheerio('.genres')
+      .find('.genre')
       .map((i, el) => loadedCheerio(el).text())
       .toArray()
       .join(',');
@@ -98,27 +96,31 @@ class WTRLAB implements Plugin.PluginBase {
       .text()
       .replace(/[\t\n]/g, '');
 
-    const chapterJson = loadedCheerio('#__NEXT_DATA__').html() + '';
-    const jsonData: NovelJson = JSON.parse(chapterJson);
+    const dataJson = loadedCheerio('#__NEXT_DATA__').html() + '';
+    const jsonData: NovelJson = JSON.parse(dataJson);
+    const id = jsonData.query.raw_id;
 
-    const chapters: Plugin.ChapterItem[] =
-      jsonData.props.pageProps.serie.chapters.map(
-        (jsonChapter, chapterIndex) => ({
-          name: jsonChapter.title,
-          path:
-            this.sourceLang +
-            'serie-' +
-            jsonData.props.pageProps.serie.serie_data.raw_id +
-            '/' +
-            jsonData.props.pageProps.serie.serie_data.slug +
-            '/chapter-' +
-            jsonChapter.order, // Assuming 'slug' is the intended path
-          releaseTime: (
-            jsonChapter?.created_at || jsonChapter?.updated_at
-          )?.substring(0, 10),
-          chapterNumber: chapterIndex + 1,
-        }),
-      );
+    novel.cover = jsonData.props.pageProps.serie.serie_data.data.image;
+
+    const chapterJsonRaw = await fetchApi(`${this.site}api/chapters/${id}`);
+    const chapterJson = await chapterJsonRaw.json();
+
+    console.log(chapterJson);
+
+    const chapters: Plugin.ChapterItem[] = chapterJson.chapters.map(
+      (jsonChapter, chapterIndex) => ({
+        name: jsonChapter.title,
+        path:
+          `${this.sourceLang}novel/${id}/` +
+          jsonData.props.pageProps.serie.serie_data.slug +
+          '/chapter-' +
+          jsonChapter.order, // Assuming 'slug' is the intended path
+        releaseTime: (
+          jsonChapter?.created_at || jsonChapter?.updated_at
+        )?.substring(0, 10),
+        chapterNumber: jsonChapter.order,
+      }),
+    );
 
     novel.chapters = chapters;
 
