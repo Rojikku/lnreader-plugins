@@ -108,10 +108,8 @@ class WTRLAB implements Plugin.PluginBase {
     const chapterJsonRaw = await fetchApi(`${this.site}api/chapters/${id}`);
     const chapterJson = await chapterJsonRaw.json();
 
-    console.log(chapterJson);
-
     const chapters: Plugin.ChapterItem[] = chapterJson.chapters.map(
-      (jsonChapter, chapterIndex) => ({
+      jsonChapter => ({
         name: jsonChapter.title,
         path:
           `${this.sourceLang}novel/${id}/` +
@@ -131,22 +129,50 @@ class WTRLAB implements Plugin.PluginBase {
   }
 
   async parseChapter(chapterPath: string): Promise<string> {
-    const body = await fetchApi(this.site + chapterPath).then(res =>
-      res.text(),
-    );
+    const url = this.site + chapterPath;
+    const body = await fetchApi(url).then(res => res.text());
 
     const loadedCheerio = parseHTML(body);
     const chapterJson = loadedCheerio('#__NEXT_DATA__').html() + '';
     const jsonData: NovelJson = JSON.parse(chapterJson);
 
-    const chapterContent = JSON.stringify(
-      jsonData.props.pageProps.serie.chapter_data.data.body,
-    );
-    const parsedArray = JSON.parse(chapterContent);
+    const chapterID = jsonData.props.pageProps.serie.chapter.id;
+    const seriesID = jsonData.props.pageProps.serie.chapter.raw_id;
+    const chapterNo = jsonData.props.pageProps.serie.chapter.order;
+
+    const chapterQuery = await fetchApi('https://wtr-lab.com/api/reader/get', {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'referrer': url,
+      // "body": `{\"translate\":\"ai\",\"language\":\"${this.sourceLang.replace('/', '')}\",\"raw_id\":${seriesID},\"chapter_no\":${chapterNo},\"retry\":false,\"force_retry\":false,\"chapter_id\":${chapterID}}`,
+      'body': `{
+      "translate":"ai",
+      "language":"${this.sourceLang.replace('/', '')}",
+      "raw_id":${seriesID},
+      "chapter_no":${chapterNo},
+      "retry":false,
+      "force_retry":false,
+      "chapter_id":${chapterID}
+      }`,
+      'method': 'POST',
+    });
+
+    const parsedJson = await chapterQuery.json();
+    const chapterContent = parsedJson.data.data.body;
+    const chapterGlossary = parsedJson.data.data.glossary_data;
     let htmlString = '';
 
-    for (const text of parsedArray) {
-      htmlString += `<p>${text}</p>`;
+    const dictionary = Object.fromEntries(
+      chapterGlossary.terms.map((definition, index) => [
+        `※${index}⛬`,
+        definition[0],
+      ]),
+    );
+
+    for (const text of chapterContent) {
+      const newText = text.replaceAll(/※[0-9]+⛬/g, m => dictionary[m]);
+      htmlString += `<p>${newText}</p>`;
     }
 
     return htmlString;
@@ -231,7 +257,7 @@ type PageProps = {
 
 type Serie = {
   serie_data: SerieData;
-  chapters: Chapter[];
+  chapter: Chapter;
   recommendation: SerieData[];
   chapter_data: ChapterData;
   id: number;
@@ -245,6 +271,7 @@ type Serie = {
 type Chapter = {
   serie_id: number;
   id: number;
+  raw_id: number;
   order: number;
   slug: string;
   title: string;
