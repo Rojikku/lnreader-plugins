@@ -25,6 +25,7 @@ class WTRLAB implements Plugin.PluginBase {
     link += `&page=${page}`; //TODO Genre & Advance Searching Filter. Ez to implement, too much manual work, too lazy.
 
     if (showLatestNovels) {
+      if (page !== 1) return [];
       const response = await fetchApi(this.site + 'api/home/recent', {
         method: 'POST',
         headers: {
@@ -38,7 +39,7 @@ class WTRLAB implements Plugin.PluginBase {
       // Parse novels from JSON
       const novels: Plugin.NovelItem[] = recentNovel.data.map(
         (datum: Datum) => ({
-          name: datum.serie.data.title || '',
+          name: datum.serie.data.title || datum.serie.slug || '',
           cover: datum.serie.data.image,
           path:
             this.sourceLang +
