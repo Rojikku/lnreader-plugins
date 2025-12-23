@@ -140,38 +140,70 @@ class WTRLAB implements Plugin.PluginBase {
     const seriesID = jsonData.props.pageProps.serie.chapter.raw_id;
     const chapterNo = jsonData.props.pageProps.serie.chapter.order;
 
-    const chapterQuery = await fetchApi('https://wtr-lab.com/api/reader/get', {
-      'headers': {
-        'Content-Type': 'application/json',
-      },
-      'referrer': url,
-      'body': `{
-      "translate":"ai",
-      "language":"${this.sourceLang.replace('/', '')}",
-      "raw_id":${seriesID},
-      "chapter_no":${chapterNo},
-      "retry":false,
-      "force_retry":false,
-      "chapter_id":${chapterID}
-      }`,
-      'method': 'POST',
-    });
+    const translationTypes = ['ai', 'web'];
 
-    const parsedJson = await chapterQuery.json();
+    let eLog = '';
+    let parsedJson;
+
+    for (const type of translationTypes) {
+      if (type == 'web') {
+        return 'Encrypted, WIP.';
+      }
+      const query = {
+        'headers': {
+          'Content-Type': 'application/json',
+        },
+        'referrer': url,
+        'body': `{
+        "translate":"${type}",
+        "language":"${this.sourceLang.replace('/', '')}",
+        "raw_id":${seriesID},
+        "chapter_no":${chapterNo},
+        "retry":false,
+        "force_retry":false,
+        "chapter_id":${chapterID}
+        }`,
+        'method': 'POST',
+      };
+
+      const chapterQuery = await fetchApi(
+        'https://wtr-lab.com/api/reader/get',
+        query,
+      );
+
+      parsedJson = await chapterQuery.json();
+      if (parsedJson.error) {
+        eLog = parsedJson.error;
+        continue;
+      } else {
+        break;
+      }
+    }
+
     const chapterContent = parsedJson.data.data.body;
     const chapterGlossary = parsedJson.data.data.glossary_data;
+
     let htmlString = '';
 
-    const dictionary = Object.fromEntries(
-      chapterGlossary.terms.map((definition, index) => [
-        `※${index}⛬`,
-        definition[0],
-      ]),
-    );
+    if (eLog !== '') {
+      htmlString += `<p style="color:darkred;">${eLog}</p>`;
+    }
 
-    for (const text of chapterContent) {
-      const newText = text.replaceAll(/※[0-9]+⛬/g, m => dictionary[m]);
-      htmlString += `<p>${newText}</p>`;
+    let dictionary = [];
+    if (chapterGlossary) {
+      dictionary = Object.fromEntries(
+        chapterGlossary.terms.map((definition, index) => [
+          `※${index}⛬`,
+          definition[0],
+        ]),
+      );
+    }
+
+    for (let text of chapterContent) {
+      if (dictionary.length > 0) {
+        text = text.replaceAll(/※[0-9]+⛬/g, m => dictionary[m]);
+      }
+      htmlString += `<p>${text}</p>`;
     }
 
     return htmlString;
