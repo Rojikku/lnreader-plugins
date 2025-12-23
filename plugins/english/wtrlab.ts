@@ -62,7 +62,9 @@ class WTRLAB implements Plugin.PluginBase {
               .text()
               .replace(loadedCheerio(element).find('.rawtitle').text(), '') ||
             '',
-          cover: loadedCheerio(element).find('img').attr('src'),
+          cover:
+            this.site +
+            loadedCheerio(element).find('img').attr('src')?.substring(1),
           path: loadedCheerio(element).find('a').attr('href') || '',
         }))
         .get()
