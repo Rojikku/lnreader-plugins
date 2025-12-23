@@ -145,7 +145,6 @@ class WTRLAB implements Plugin.PluginBase {
         'Content-Type': 'application/json',
       },
       'referrer': url,
-      // "body": `{\"translate\":\"ai\",\"language\":\"${this.sourceLang.replace('/', '')}\",\"raw_id\":${seriesID},\"chapter_no\":${chapterNo},\"retry\":false,\"force_retry\":false,\"chapter_id\":${chapterID}}`,
       'body': `{
       "translate":"ai",
       "language":"${this.sourceLang.replace('/', '')}",
