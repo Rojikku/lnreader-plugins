@@ -128,6 +128,65 @@ class WTRLAB implements Plugin.PluginBase {
     return novel;
   }
 
+  async decrypt(encrypted: string, encKey: string): Promise<string> {
+    try {
+      // t is set to false here; true if arr:
+      // If true we parse as json
+      let t = !1,
+        u = encrypted;
+      // t true if arr:, str: straight, else error
+      encrypted.startsWith('arr:')
+        ? ((t = !0), (u = encrypted.substring(4)))
+        : encrypted.startsWith('str:') && (u = encrypted.substring(4));
+      const r = u.split(':');
+      if (3 !== r.length) throw Error('Invalid encrypted data format');
+
+      // Remove base64, setup vars
+      const iv = Uint8Array.from(atob(r[0]), encrypted =>
+          encrypted.charCodeAt(0),
+        ), //a
+        tag = Uint8Array.from(atob(r[1]), encrypted => encrypted.charCodeAt(0)), //i
+        ciphertext = Uint8Array.from(atob(r[2]), encrypted =>
+          encrypted.charCodeAt(0),
+        ), //o
+        combined = new Uint8Array(ciphertext.length + tag.length);
+
+      // Make the ciphertext + tag format expected for decryption
+      combined.set(ciphertext), combined.set(tag, ciphertext.length);
+
+      // Decrypt with encKey
+      const D = new TextEncoder().encode(encKey.slice(0, 32)),
+        d = await crypto.subtle.importKey(
+          'raw',
+          D,
+          {
+            name: 'AES-GCM',
+          },
+          !1,
+          ['decrypt'],
+        ),
+        h = await crypto.subtle.decrypt(
+          {
+            name: 'AES-GCM',
+            iv: iv,
+          },
+          d,
+          combined,
+        ),
+        m = new TextDecoder().decode(h);
+
+      // If it was arr:, parse as json
+      if (t) return JSON.parse(m);
+      // Otherwise (str:) return straight
+      return m;
+    } catch (error) {
+      throw (
+        (console.error('Client-side decryption error:', error),
+        Error('Failed to decrypt content'))
+      );
+    }
+  }
+
   async parseChapter(chapterPath: string): Promise<string> {
     const url = this.site + chapterPath;
     const body = await fetchApi(url).then(res => res.text());
@@ -180,10 +239,19 @@ class WTRLAB implements Plugin.PluginBase {
       }
     }
 
-    const chapterContent = parsedJson.data.data.body;
+    let chapterContent = parsedJson.data.data.body;
     const chapterGlossary = parsedJson.data.data.glossary_data;
 
     let htmlString = '';
+
+    const encKey = '';
+
+    if (
+      chapterContent.startsWith('arr:') ||
+      chapterContent.startsWith('str:')
+    ) {
+      chapterContent = await this.decrypt(chapterContent, encKey);
+    }
 
     if (eLog !== '') {
       htmlString += `<p style="color:darkred;">${eLog}</p>`;
