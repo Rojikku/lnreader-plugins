@@ -151,25 +151,20 @@ class WTRLAB implements Plugin.PluginBase {
       combined.set(ciphertext), combined.set(tag, ciphertext.length);
 
       // Decrypt with encKey
-      const D = new TextEncoder().encode(encKey.slice(0, 32)),
-        d = await crypto.subtle.importKey(
-          'raw',
-          D,
-          {
-            name: 'AES-GCM',
-          },
-          !1,
-          ['decrypt'],
-        ),
-        h = await crypto.subtle.decrypt(
-          {
-            name: 'AES-GCM',
-            iv: iv,
-          },
-          d,
-          combined,
-        ),
-        m = new TextDecoder().decode(h);
+      const D = new TextEncoder().encode(encKey.slice(0, 32));
+      const d = await crypto.subtle.importKey(
+        'raw',
+        D,
+        { name: 'AES-GCM' },
+        !1,
+        ['decrypt'],
+      );
+      const h = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        d,
+        combined,
+      );
+      const m = new TextDecoder().decode(h);
 
       // If it was arr:, parse as json
       if (t) return JSON.parse(m);
