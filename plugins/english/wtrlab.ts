@@ -142,13 +142,9 @@ class WTRLAB implements Plugin.PluginBase {
       if (3 !== r.length) throw Error('Invalid encrypted data format');
 
       // Remove base64, setup vars
-      const iv = Uint8Array.from(atob(r[0]), encrypted =>
-          encrypted.charCodeAt(0),
-        ), //a
-        tag = Uint8Array.from(atob(r[1]), encrypted => encrypted.charCodeAt(0)), //i
-        ciphertext = Uint8Array.from(atob(r[2]), encrypted =>
-          encrypted.charCodeAt(0),
-        ), //o
+      const [iv, tag, ciphertext] = r.map(part =>
+          Uint8Array.from(atob(part), e => e.charCodeAt(0)),
+        ),
         combined = new Uint8Array(ciphertext.length + tag.length);
 
       // Make the ciphertext + tag format expected for decryption
