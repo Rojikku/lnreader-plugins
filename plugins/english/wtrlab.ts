@@ -214,6 +214,29 @@ class WTRLAB implements Plugin.PluginBase {
     return encKey;
   }
 
+  async translate(data: string[]): Promise<string[]> {
+    const contained = data.map((line, i) => `<a i=${i}>${line}</a>`);
+
+    let translated = await fetchApi(
+      'https://translate-pa.googleapis.com/v1/translateHtml',
+      {
+        'credentials': 'omit',
+        'headers': {
+          'content-type': 'application/json+protobuf',
+          // Generic public API key source also uses
+          // Seen all over google
+          'X-Goog-API-Key': 'AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520',
+        },
+        'referrer': 'https://wtr-lab.com/',
+        'body': `[[${JSON.stringify(contained)},\"zh-CN\",\"en\"],\"te_lib\"]`,
+        'method': 'POST',
+      },
+    );
+    translated = await translated.json();
+    translated = translated[0];
+    return translated;
+  }
+
   async parseChapter(chapterPath: string): Promise<string> {
     const url = this.site + chapterPath;
     const body = await fetchApi(url).then(res => res.text());
@@ -274,7 +297,9 @@ class WTRLAB implements Plugin.PluginBase {
     ) {
       const encKey = await this.getKey(loadedCheerio);
       chapterContent = await this.decrypt(chapterContent, encKey);
-      htmlString += `<p style="color:darkred;">Translation code not written yet (Yes the source translates the code on your client).</p>`;
+      chapterContent = await this.translate(chapterContent);
+      console.log(chapterContent);
+      htmlString += `<p><small>This is being translated from your device via google translate (source's method) - Login via web view to try for ai translations</small></p>`;
     }
 
     if (eLog !== '') {
