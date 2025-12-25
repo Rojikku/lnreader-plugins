@@ -287,7 +287,15 @@ class WTRLAB implements Plugin.PluginBase {
     }
 
     let chapterContent = parsedJson.data.data.body;
-    const chapterGlossary = parsedJson.data.data.glossary_data;
+    let chapterGlossary = {} as JSON;
+    if (
+      Object.prototype.hasOwnProperty.call(
+        parsedJson.data.data,
+        'glossary_data',
+      )
+    ) {
+      chapterGlossary = parsedJson.data.data.glossary_data;
+    }
 
     let htmlString = '';
 
@@ -307,7 +315,7 @@ class WTRLAB implements Plugin.PluginBase {
     }
 
     let dictionary = [];
-    if (chapterGlossary) {
+    if (Object.prototype.hasOwnProperty.call(chapterGlossary, 'terms')) {
       dictionary = Object.fromEntries(
         chapterGlossary.terms.map((definition, index) => [
           `※${index}⛬`,
@@ -317,7 +325,7 @@ class WTRLAB implements Plugin.PluginBase {
     }
 
     for (let text of chapterContent) {
-      if (dictionary.length > 0) {
+      if (Object.keys(dictionary).length > 0) {
         text = text.replaceAll(/※[0-9]+⛬/g, m => dictionary[m]);
       }
       htmlString += `<p>${text}</p>`;
