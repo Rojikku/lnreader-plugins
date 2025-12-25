@@ -292,8 +292,8 @@ class WTRLAB implements Plugin.PluginBase {
     let htmlString = '';
 
     if (
-      chapterContent.startsWith('arr:') ||
-      chapterContent.startsWith('str:')
+      chapterContent.toString().startsWith('arr:') ||
+      chapterContent.toString().startsWith('str:')
     ) {
       const encKey = await this.getKey(loadedCheerio);
       chapterContent = await this.decrypt(chapterContent, encKey);
