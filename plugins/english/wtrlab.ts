@@ -128,7 +128,7 @@ class WTRLAB implements Plugin.PluginBase {
     return novel;
   }
 
-  async decrypt(encrypted: string, encKey: string): Promise<string> {
+  async decrypt(encrypted: string, encKey: string) {
     try {
       // t is set to false here; true if arr:
       // If true we parse as json
@@ -171,10 +171,9 @@ class WTRLAB implements Plugin.PluginBase {
       // Otherwise (str:) return straight
       return m;
     } catch (error) {
-      throw (
-        (console.error('Client-side decryption error:', error),
-        Error('Failed to decrypt content'))
-      );
+      console.error('Client-side decryption error:', error);
+      const msg = { 'error': `<p>Client-side decryption error:</p>${error}` };
+      return msg;
     }
   }
 
@@ -305,8 +304,11 @@ class WTRLAB implements Plugin.PluginBase {
     ) {
       const encKey = await this.getKey(loadedCheerio);
       chapterContent = await this.decrypt(chapterContent, encKey);
+      if (Object.prototype.hasOwnProperty.call(chapterContent, 'error')) {
+        htmlString += `<p>${chapterContent.error.toString()}</p>`;
+        return htmlString;
+      }
       chapterContent = await this.translate(chapterContent);
-      console.log(chapterContent);
       htmlString += `<p><small>This is being translated from your device via google translate (source's method) - Login via web view to try for ai translations</small></p>`;
     }
 
