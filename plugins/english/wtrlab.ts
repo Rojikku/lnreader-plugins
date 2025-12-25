@@ -178,6 +178,42 @@ class WTRLAB implements Plugin.PluginBase {
     }
   }
 
+  async getKey($): Promise<string> {
+    // Fetch the novel's data in JSON format
+    const searchKey = '.slice(0,32)),d=await';
+
+    let URLs = [];
+    let code;
+    let index = -1;
+
+    // Find URL with API Key
+    const srcs = $('head')
+      .find('script')
+      .map(function () {
+        const src = $(this).attr('src');
+        if (src in URLs) {
+          return null;
+        }
+        URLs.push(src);
+      })
+      .toArray();
+    for (let src of URLs) {
+      const script = await fetchApi(`${this.site}${src}`);
+      const raw = await script.text();
+      index = raw.indexOf(searchKey);
+      if (index >= 0) {
+        code = raw;
+        break;
+      }
+    }
+    if (!code) {
+      throw new Error('Failed to find Encryption Key');
+    }
+    // Get right segment of code
+    const encKey = code.substring(index - 33, index - 1);
+    return encKey;
+  }
+
   async parseChapter(chapterPath: string): Promise<string> {
     const url = this.site + chapterPath;
     const body = await fetchApi(url).then(res => res.text());
@@ -196,9 +232,6 @@ class WTRLAB implements Plugin.PluginBase {
     let parsedJson;
 
     for (const type of translationTypes) {
-      if (type == 'web') {
-        return 'Encrypted, WIP.';
-      }
       const query = {
         'headers': {
           'Content-Type': 'application/json',
@@ -235,13 +268,13 @@ class WTRLAB implements Plugin.PluginBase {
 
     let htmlString = '';
 
-    const encKey = '';
-
     if (
       chapterContent.startsWith('arr:') ||
       chapterContent.startsWith('str:')
     ) {
+      const encKey = await this.getKey(loadedCheerio);
       chapterContent = await this.decrypt(chapterContent, encKey);
+      htmlString += `<p style="color:darkred;">Translation code not written yet (Yes the source translates the code on your client).</p>`;
     }
 
     if (eLog !== '') {
