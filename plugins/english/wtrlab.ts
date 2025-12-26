@@ -2,6 +2,8 @@ import { Plugin } from '@/types/plugin';
 import { fetchApi } from '@libs/fetch';
 import { FilterTypes, Filters } from '@libs/filterInputs';
 import { load as parseHTML } from 'cheerio';
+import { gcm } from '@noble/ciphers/aes.js';
+import { utf8ToBytes, bytesToUtf8 } from '@noble/ciphers/utils.js';
 
 class WTRLAB implements Plugin.PluginBase {
   id = 'WTRLAB';
@@ -151,20 +153,32 @@ class WTRLAB implements Plugin.PluginBase {
       combined.set(ciphertext), combined.set(tag, ciphertext.length);
 
       // Decrypt with encKey
-      const D = new TextEncoder().encode(encKey.slice(0, 32));
-      const d = await crypto.subtle.importKey(
-        'raw',
-        D,
-        { name: 'AES-GCM' },
-        !1,
-        ['decrypt'],
-      );
-      const h = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: iv },
-        d,
-        combined,
-      );
-      const m = new TextDecoder().decode(h);
+      // Convert the key to bytes (first 32 characters of encKey)
+      const keyBytes = utf8ToBytes(encKey.slice(0, 32));
+
+      // Create AES-GCM cipher instance
+      const aes = gcm(keyBytes, iv);
+
+      // Decrypt the combined ciphertext
+      const decrypted = aes.decrypt(combined);
+
+      // Convert decrypted bytes to string
+      const m = bytesToUtf8(decrypted);
+
+      // const D = new TextEncoder().encode(encKey.slice(0, 32));
+      // const d = await crypto.subtle.importKey(
+      //   'raw',
+      //   D,
+      //   { name: 'AES-GCM' },
+      //   !1,
+      //   ['decrypt'],
+      // );
+      // const h = await crypto.subtle.decrypt(
+      //   { name: 'AES-GCM', iv: iv },
+      //   d,
+      //   combined,
+      // );
+      // const m = new TextDecoder().decode(h);
 
       // If it was arr:, parse as json
       if (t) return JSON.parse(m);
