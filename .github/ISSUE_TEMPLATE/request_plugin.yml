@@ -54,3 +54,5 @@ body:
           required: true
         - label: I have provided all requested information in this form.
           required: true
+        - label: I understand I must face @error7404 in fisticuffs combat if any of the above are acknowledged falsely.
+          required: true
