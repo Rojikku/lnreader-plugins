@@ -5,8 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "clean:multisrc": "find . -type f -wholename \"*plugins*\\[*\\]*.[t,j]s\" -delete",
-    "clean:multisrc:windows": "powershell -Command \"Get-ChildItem -Recurse -Include \\\"*].ts\\\",\\\"*].js\\\" | Where-Object { $_.FullName -like \\\"*plugins*\\\" } | Remove-Item\"",
+    "clean:multisrc": "git clean -dX ./plugins -i",
     "dev": "vite",
     "dev:start": "node ./plugins/multisrc/generate-multisrc-plugins.js && node scripts/generate-plugin-index.js && vite",
     "build:multisrc": "node ./plugins/multisrc/generate-multisrc-plugins.js",
