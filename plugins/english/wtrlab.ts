@@ -412,7 +412,7 @@ class WTRLAB implements Plugin.PluginBase {
 
   async getKey($: any): Promise<string> {
     // Fetch the novel's data in JSON format
-    const searchKey = '.slice(0,32)),d=await';
+    const searchKey = 'TextEncoder().encode("';
 
     const URLs: string[] = [];
     let code: string | undefined;
@@ -440,7 +440,7 @@ class WTRLAB implements Plugin.PluginBase {
       throw new Error('Failed to find Encryption Key');
     }
     // Get right segment of code
-    const encKey = code.substring(index - 33, index - 1);
+    const encKey = code.substring(index + 22, index + 54);
     return encKey;
   }
 
