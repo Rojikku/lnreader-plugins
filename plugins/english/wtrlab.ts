@@ -3,13 +3,12 @@ import { fetchApi } from '@libs/fetch';
 import { FilterTypes, Filters } from '@libs/filterInputs';
 import { load as parseHTML } from 'cheerio';
 import { gcm } from '@noble/ciphers/aes.js';
-import { utf8ToBytes, bytesToUtf8 } from '@noble/ciphers/utils.js';
 
 class WTRLAB implements Plugin.PluginBase {
   id = 'WTRLAB';
   name = 'WTR-LAB';
   site = 'https://wtr-lab.com/';
-  version = '1.0.2';
+  version = '1.1.0';
   icon = 'src/en/wtrlab/icon.png';
   sourceLang = 'en/';
 
@@ -373,7 +372,7 @@ class WTRLAB implements Plugin.PluginBase {
 
       // Decrypt with encKey
       // Convert the key to bytes (first 32 characters of encKey)
-      const keyBytes = utf8ToBytes(encKey.slice(0, 32));
+      const keyBytes = new TextEncoder().encode(encKey.slice(0, 32));
 
       // Create AES-GCM cipher instance
       const aes = gcm(keyBytes, iv);
@@ -382,7 +381,7 @@ class WTRLAB implements Plugin.PluginBase {
       const decrypted = aes.decrypt(combined);
 
       // Convert decrypted bytes to string
-      const m = bytesToUtf8(decrypted);
+      const m = new TextDecoder().decode(decrypted);
 
       // const D = new TextEncoder().encode(encKey.slice(0, 32));
       // const d = await crypto.subtle.importKey(
