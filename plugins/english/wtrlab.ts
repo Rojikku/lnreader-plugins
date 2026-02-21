@@ -2,7 +2,7 @@ import { Plugin } from '@/types/plugin';
 import { fetchApi } from '@libs/fetch';
 import { FilterTypes, Filters } from '@libs/filterInputs';
 import { load as parseHTML } from 'cheerio';
-import { gcm } from '@noble/ciphers/aes.js';
+import { gcm } from '@libs/aes';
 
 class WTRLAB implements Plugin.PluginBase {
   id = 'WTRLAB';
