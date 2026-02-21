@@ -141,6 +141,10 @@ class WTRLAB implements Plugin.PluginBase {
     const nextDataElement = loadedCheerio('#__NEXT_DATA__');
     const nextDataText = nextDataElement.html();
 
+    let rawId: number | null = null;
+    let slug: string | null = null;
+    let chapterCount = 0;
+
     const novel: Plugin.SourceNovel = {
       path: novelPath,
       name: loadedCheerio('h1.text-uppercase').text(),
@@ -159,6 +163,8 @@ class WTRLAB implements Plugin.PluginBase {
           novel.cover = serieData.data?.image || '';
           novel.summary = serieData.data?.description || '';
           novel.author = serieData.data?.author || '';
+          rawId = serieData.raw_id || null;
+          slug = serieData.slug || null;
 
           switch (serieData.status) {
             case 0:
@@ -306,10 +312,6 @@ class WTRLAB implements Plugin.PluginBase {
           .match(/•\s*(\w+)/)?.[1] ||
         '';
     }
-
-    let rawId: number | null = null;
-    let slug: string | null = null;
-    let chapterCount = 0;
 
     const urlMatch = novelPath.match(/serie-(\d+)\/([^/]+)/);
     if (urlMatch) {
@@ -529,7 +531,11 @@ class WTRLAB implements Plugin.PluginBase {
         break;
       }
     }
-
+    if (parsedJson.success == false) {
+      const errorMsg = parsedJson.message;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
     let chapterContent = parsedJson.data.data.body;
     let chapterGlossary = {} as JSON;
     if (
